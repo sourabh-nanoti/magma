@@ -241,3 +241,11 @@ message S8Config {
     string local_address = 2;
     string pgw_address = 3;
 }
+
+
+message RadiusProxyConfig {
+    orc8r.LogLevel log_level = 1;
+    string local_address = 2;
+    string aaa_address = 3;
+    string server_secret = 4;
+}
