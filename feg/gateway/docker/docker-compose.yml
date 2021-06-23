@@ -161,6 +161,11 @@ services:
              /usr/bin/redis-server /var/opt/magma/tmp/redis.conf --daemonize no &&
              /usr/bin/redis-cli shutdown"
 
+  radius_proxy:
+    <<: *goservice
+    container_name: radius_proxy
+    command: envdir /var/opt/magma/envdir /var/opt/magma/bin/radius_proxy -logtostderr=true -v=0
+
   td-agent-bit:
     <<: *pyservice_base
     container_name: td-agent-bit
