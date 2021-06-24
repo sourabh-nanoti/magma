@@ -179,3 +179,12 @@ func makeDefaultExpectationResults(n int) []*protos.ExpectationResult {
 	}
 	return expectedResults
 }
+
+// ProxyRadiusAndAssertSuccess Trigger a Radius Proxy Request. Assert that the authentication
+// succeeded.
+func (tr *TestRunner) ProxyRadiusAndAssertSuccess() {
+	radiusP, err := tr.ProxyRadius()
+	assert.NoError(tr.t, err)
+	assert.True(tr.t, reflect.DeepEqual(int(radiusP.Code), radius.CodeAccessAccept))
+
+}

@@ -142,3 +142,8 @@ func makeSubscriberId(imsi string) *lte_protos.SubscriberID {
 	}
 	return &lte_protos.SubscriberID{Id: imsi, Type: lte_protos.SubscriberID_IMSI}
 }
+
+// ProxyRadius Not Implimented
+func (srv *UESimServerHssLess) ProxyRadius(ctx context.Context, id *cwfprotos.AuthenticateRequest) (*cwfprotos.AuthenticateResponse, error) {
+	return nil, nil
+}

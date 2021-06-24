@@ -119,4 +119,6 @@ service UESim {
 
     // Triggers iperf traffic towards the CWAG
     rpc GenTraffic(GenTrafficRequest) returns (GenTrafficResponse) {}
+
+    rpc ProxyRadius (AuthenticateRequest) returns (AuthenticateResponse) {}
 }
