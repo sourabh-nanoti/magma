@@ -86,6 +86,7 @@ func init() {
 	addLocalService(SESSION_PROXY, 9097)
 	addLocalService(S6A_PROXY, 9098)
 	addLocalService(S8_PROXY, 9099)
+	addLocalService(RADIUS_PROXY, 9100)
 	addLocalService(CSFB, 9101)
 	addLocalService(HEALTH, 9107)
 

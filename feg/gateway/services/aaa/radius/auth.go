@@ -25,9 +25,11 @@ import (
 	"layeh.com/radius/rfc2869"
 	"layeh.com/radius/rfc6911"
 
+	radius_protos "magma/feg/cloud/go/protos"
 	"magma/feg/gateway/services/aaa/client"
 	"magma/feg/gateway/services/aaa/protos"
 	"magma/feg/gateway/services/eap"
+	"magma/feg/gateway/services/radius_proxy"
 )
 
 type clientAuthenticator struct{}
@@ -83,15 +85,6 @@ func (s *AuthServer) ServeRADIUS(w radius.ResponseWriter, r *radius.Request) {
 		return
 	}
 	p := r.Packet
-	e := p.Get(rfc2869.EAPMessage_Type)
-	if e == nil {
-		glog.Errorf("%s request from %s is missing EAP Attribute", p.Code.String(), r.RemoteAddr.String())
-		err := w.Write(p.Response(radius.CodeAccessReject))
-		if err != nil {
-			glog.Errorf("error sending access reject to %s: %v", r.RemoteAddr, err)
-		}
-		return
-	}
 	sessionCtx := &protos.Context{
 		SessionId: rfc2866.AcctSessionID_GetString(p),
 		Apn:       rfc2865.CalledStationID_GetString(p),
@@ -110,6 +103,39 @@ func (s *AuthServer) ServeRADIUS(w radius.ResponseWriter, r *radius.Request) {
 	if ip != nil {
 		sessionCtx.IpAddr = ip.String()
 	}
+
+	e := p.Get(rfc2869.EAPMessage_Type)
+	if e != nil {
+		s.HandleEap(w, r, sessionCtx)
+	} else {
+		s.ProxyPacket(w, r, sessionCtx)
+	}
+}
+
+// GenSessionID creates syntetic radius session ID if none is supplied by the client
+func GenSessionID(calling string, called string) string {
+	return fmt.Sprintf("%s__%s", string(calling), string(called))
+}
+
+// ToRadiusCode returs the RADIUS packet code which, as per RFCxxxx
+// should carry the EAP payload of the given EAP Code
+func ToRadiusCode(eapCode uint8) radius.Code {
+	switch eapCode {
+	case eap.SuccessCode:
+		return radius.CodeAccessAccept
+	case eap.ResponseCode, eap.RequestCode:
+		return radius.CodeAccessChallenge
+	default:
+		return radius.CodeAccessReject
+	}
+}
+
+// HandleEap Handles the EAP Packet inside the Radius Message received.
+func (s *AuthServer) HandleEap(w radius.ResponseWriter, r *radius.Request, sessionCtx *protos.Context) {
+
+	p := r.Packet
+	e := p.Get(rfc2869.EAPMessage_Type)
+
 	eapp := eap.Packet(e)
 	var (
 		eapRes *protos.Eap
@@ -188,15 +214,35 @@ func GenSessionID(calling string, called string) string {
 	return fmt.Sprintf("%s__%s", calling, called)
 }
 
-// ToRadiusCode returs the RADIUS packet code which, as per RFCxxxx
-// should carry the EAP payload of the given EAP Code
-func ToRadiusCode(eapCode uint8) radius.Code {
-	switch eapCode {
-	case eap.SuccessCode:
-		return radius.CodeAccessAccept
-	case eap.ResponseCode, eap.RequestCode:
-		return radius.CodeAccessChallenge
-	default:
-		return radius.CodeAccessReject
+
+// ProxyPacket Handles the EAP Packet inside the Radius Message received.
+func (s *AuthServer) ProxyPacket(w radius.ResponseWriter, r *radius.Request, sessionCtx *protos.Context) {
+	// This is not an EAP packet. Just proxy the packet to RadiusProxy running on Feg
+	p := r.Packet
+	_reqPacket, err := p.Encode()
+	if err != nil {
+		glog.Errorf("error encoding radius packet %s ", err)
+		return
 	}
+	pReq := &radius_protos.AaaRequest{
+		Packet: _reqPacket,
+	}
+
+	pRsp, err := radius_proxy.ProxyPacket(pReq)
+	if err != nil {
+		glog.Errorf("error in ProxyPacket %s", err)
+		return
+	}
+
+	_rspPacket := pRsp.GetPacket()
+	if err != nil {
+		glog.Errorf("error in GetPacket %s", err)
+		return
+	}
+	resp, err := radius.Parse(_rspPacket, r.Secret)
+	if err != nil {
+		glog.Errorf("error in Parsing Response %s", err)
+		return
+	}
+	err = w.Write(resp)
 }
