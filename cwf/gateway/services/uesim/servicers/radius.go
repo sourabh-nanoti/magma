@@ -149,3 +149,10 @@ func (srv *UESimServer) addMessageAuthenticator(encoded []byte) []byte {
 
 	return encoded
 }
+
+func (srv *UESimServer) makeRadiusProxyRequest() *radius.Packet {
+	packet := radius.New(radius.CodeAccessRequest, []byte(`12345`))
+	rfc2865.UserName_SetString(packet, "tim")
+	rfc2865.UserPassword_SetString(packet, "12345")
+	return packet
+}

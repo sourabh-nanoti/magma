@@ -499,3 +499,22 @@ func getEncodedIMSI(imsiStr string) (string, error) {
 	compacted := (imsi << 2) | (prefixLen & 0x3)
 	return fmt.Sprintf("0x%016x", compacted<<1|0x1), nil
 }
+
+// ProxyRadius Test Radius proxy Functionality
+func (tr *TestRunner) ProxyRadius() (*radius.Packet, error) {
+	fmt.Printf("************* Testing Radius proxy with Radius Access Request \n")
+	res, err := uesim.ProxyRadius(&cwfprotos.AuthenticateRequest{})
+	if err != nil {
+		fmt.Println(err)
+		return &radius.Packet{}, err
+	}
+	encoded := res.GetRadiusPacket()
+	radiusP, err := radius.Parse(encoded, []byte(Secret))
+	if err != nil {
+		err = errors.Wrap(err, "Error while parsing encoded Radius packet")
+		fmt.Println(err)
+		return &radius.Packet{}, err
+	}
+	fmt.Println("Finished Authenticating UE")
+	return radiusP, nil
+}
