@@ -33,8 +33,7 @@ x-generic-service: &service
 # Use generic anchor to defined dependence on td-agent-bit container
 x-log-forward: &depends_on_logs
   depends_on:
-    td-agent-bit:
-      condition: service_healthy
+    - td-agent-bit
 
 # Use generic python anchor to avoid repetition for python services
 x-pyservice_base: &pyservice_base

@@ -90,6 +90,21 @@ services:
     environment:
       MAGMA_PRINT_GRPC_PAYLOAD: 1
     command: envdir /var/opt/magma/envdir /var/opt/magma/bin/session_proxy -logtostderr=true -v=2
+    
+  radius_proxy:
+    <<: *feggoservice
+    container_name: radius_proxy
+    environment:
+      MAGMA_PRINT_GRPC_PAYLOAD: 1
+    command: envdir /var/opt/magma/envdir /var/opt/magma/bin/radius_proxy -logtostderr=true -v=9
+
+  aaa:
+    <<: *feggoservice
+    container_name: aaa
+    environment:
+      MAGMA_PRINT_GRPC_PAYLOAD: 1
+    command: envdir /var/opt/magma/envdir /var/opt/magma/bin/aaa -logtostderr=true -v=9
+
 
   hss:
     <<: *feggoservice
@@ -146,7 +161,7 @@ services:
     <<: *service
     container_name: uesim
     image: ${DOCKER_REGISTRY}cwag_go:${IMAGE_VERSION}
-    command: envdir /var/opt/magma/envdir /var/opt/magma/bin/uesim -logtostderr=true -v=0
+    command: envdir /var/opt/magma/envdir /var/opt/magma/bin/uesim -logtostderr=true -v=9
 
   ingress:
     <<: *service

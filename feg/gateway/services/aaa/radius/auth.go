@@ -54,24 +54,25 @@ func (s *Server) StartAuth() error {
 	if s == nil {
 		return fmt.Errorf("nil radius auth server")
 	}
-	if s.authenticator == nil { // authenticator is not provided, use AAA RPC client
+	/*if s.authenticator == nil { // authenticator is not provided, use AAA RPC client
 		s.authenticator = clientAuthenticator{}
 	}
 	methods, err := s.authenticator.SupportedMethods(context.Background(), &protos.Void{})
 	if err != nil {
 		glog.Errorf("radius EAP server failed to get supported EAP methods: %v", err)
 		return err
-	}
-	s.authMethods = methods.GetMethods()
+	}*/
+	//s.authMethods = methods.GetMethods()
+
 	server := radius.PacketServer{
 		Addr:         s.GetConfig().AuthAddr,
 		Network:      s.GetConfig().Network,
 		SecretSource: radius.StaticSecretSource(s.GetConfig().Secret),
 		Handler:      &s.AuthServer,
-		// InsecureSkipVerify: false,
+		//InsecureSkipVerify: true,
 	}
 	glog.Infof("Starting Radius EAP server on %s::%s", server.Network, server.Addr)
-	err = server.ListenAndServe()
+	err := server.ListenAndServe()
 	if err != nil {
 		glog.Errorf("failed to start radius EAP server @ %s::%s - %v", server.Network, server.Addr, err)
 	}
@@ -84,11 +85,13 @@ func (s *AuthServer) ServeRADIUS(w radius.ResponseWriter, r *radius.Request) {
 		glog.Errorf("invalid request: %v", r)
 		return
 	}
+	glog.Errorf("in ServeRADIUS")
 	p := r.Packet
 	sessionCtx := &protos.Context{
 		SessionId: rfc2866.AcctSessionID_GetString(p),
 		Apn:       rfc2865.CalledStationID_GetString(p),
 		MacAddr:   rfc2865.CallingStationID_GetString(p),
+		Imsi:      rfc2865.UserName_GetString(p),
 	}
 	if len(sessionCtx.SessionId) == 0 {
 		sessionCtx.SessionId = GenSessionID(sessionCtx.MacAddr, sessionCtx.Apn)
@@ -209,40 +212,63 @@ func (s *AuthServer) HandleEap(w radius.ResponseWriter, r *radius.Request, sessi
 	}
 }
 
-// GenSessionID creates synthetic radius session ID if none is supplied by the client
-func GenSessionID(calling string, called string) string {
-	return fmt.Sprintf("%s__%s", calling, called)
-}
-
-
 // ProxyPacket Handles the EAP Packet inside the Radius Message received.
 func (s *AuthServer) ProxyPacket(w radius.ResponseWriter, r *radius.Request, sessionCtx *protos.Context) {
 	// This is not an EAP packet. Just proxy the packet to RadiusProxy running on Feg
+	glog.Infof("In aaa_server Proxy Packet")
+
 	p := r.Packet
+
 	_reqPacket, err := p.Encode()
 	if err != nil {
 		glog.Errorf("error encoding radius packet %s ", err)
 		return
 	}
+
 	pReq := &radius_protos.AaaRequest{
 		Packet: _reqPacket,
 	}
 
 	pRsp, err := radius_proxy.ProxyPacket(pReq)
+
 	if err != nil {
-		glog.Errorf("error in ProxyPacket %s", err)
+		glog.Errorf("Error in HandleProxyRequest %s", err)
 		return
 	}
-
 	_rspPacket := pRsp.GetPacket()
 	if err != nil {
 		glog.Errorf("error in GetPacket %s", err)
 		return
 	}
-	resp, err := radius.Parse(_rspPacket, r.Secret)
+	rspPacket, err := radius.Parse(_rspPacket, r.Secret)
 	if err != nil {
 		glog.Errorf("error in Parsing Response %s", err)
 		return
 	}
-	err = w.Write(resp)
+	glog.Infof("Got Response %s", rspPacket.Code)
+
+	if rspPacket.Code == radius.CodeAccessAccept {
+
+		addSessionRsp, err := s.authenticator.AddSession(r.Context(), &protos.DummyAddSessionReq{Ctx: sessionCtx})
+		if err != nil {
+			glog.Errorf("error in adding session to sessionD %s", err)
+			return
+		}
+
+		glog.Infof("Success in add session to sessionD with sessionid: %s", addSessionRsp.GetCtx().GetSessionId())
+
+	}
+
+	radiusResponse := r.Response(rspPacket.Code)
+	radiusResponse.Attributes = rspPacket.Attributes
+
+	err = AddMessageAuthenticatorAttr(radiusResponse)
+	if err != nil {
+		glog.Errorf("failed to add Message-Authenticator AVP: %v", err)
+	}
+
+	err = w.Write(radiusResponse)
+	if err != nil {
+		glog.Errorf("error sending %s response to %s: %v", r.Code.String(), r.RemoteAddr, err)
+	}
 }

@@ -62,10 +62,23 @@
   },
   "aaa_server": {
    "@type": "type.googleapis.com/magma.mconfig.AAAConfig",
-   "logLevel": "INFO",
+   "logLevel": "DEBUG",
    "IdleSessionTimeoutMs": 21600000,
    "CreateSessionOnAuth": true,
-   "AccountingEnabled": true
+   "AccountingEnabled": true,
+   "RadiusConfig": {
+     "Secret": "MTIzNDU2",
+     "Network": "udp",
+     "AuthAddr": "192.168.70.101:1812",
+     "AcctAddr": "192.168.70.101:1813"
+   }
+  },
+  "radius_proxy": {
+   "@type": "type.googleapis.com/magma.mconfig.RadiusProxyConfig",
+   "logLevel": "DEBUG",
+	 "localAddress": ":50010",
+	 "aaaAddress": "127.0.0.1:50008",
+   "serverSecret": "123456"
   },
   "control_proxy": {
    "@type": "type.googleapis.com/magma.mconfig.ControlProxy",

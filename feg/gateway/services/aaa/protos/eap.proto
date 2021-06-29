@@ -59,6 +59,14 @@ message eap_method_list {
     bytes methods = 1;
 }
 
+message dummy_add_session_req {
+    context ctx = 1;
+}
+
+message dummy_add_session_rsp {
+    context ctx = 1;
+}
+
 service authenticator {
     // handle_identity passes Identity EAP payload to corresponding method provider & returns corresponding
     // EAP result
@@ -68,6 +76,8 @@ service authenticator {
     rpc handle(eap) returns (eap) {}
     // supported_methods returns sorted list (ascending, by type) of registered EAP Provider Methods
     rpc supported_methods(Void) returns (eap_method_list) {}
+    // Adds a non-eap session to auth/accounting
+    rpc add_session(dummy_add_session_req) returns (dummy_add_session_rsp) {}
 }
 
 // NOTE: Depreciated, use authenticator service instead

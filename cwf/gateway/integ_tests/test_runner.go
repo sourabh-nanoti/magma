@@ -505,9 +505,9 @@ func getEncodedIMSI(imsiStr string) (string, error) {
 }
 
 // ProxyRadius Test Radius proxy Functionality
-func (tr *TestRunner) ProxyRadius() (*radius.Packet, error) {
+func (tr *TestRunner) ProxyRadius(imsi string, calledStationID string) (*radius.Packet, error) {
 	fmt.Printf("************* Testing Radius proxy with Radius Access Request \n")
-	res, err := uesim.ProxyRadius(&cwfprotos.AuthenticateRequest{})
+	res, err := uesim.ProxyRadius(&cwfprotos.ProxyRadiusRequest{UeMac: imsi, CalledStationID: calledStationID})
 	if err != nil {
 		fmt.Println(err)
 		return &radius.Packet{}, err
@@ -520,5 +520,6 @@ func (tr *TestRunner) ProxyRadius() (*radius.Packet, error) {
 		return &radius.Packet{}, err
 	}
 	fmt.Println("Finished Authenticating UE")
+	fmt.Println("Code:", radiusP.Code)
 	return radiusP, nil
 }

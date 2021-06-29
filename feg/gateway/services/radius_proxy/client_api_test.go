@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	ServerSecret = "12345"
+	ServerSecret = "123456"
 )
 
 func TestRadiusProxyClient(t *testing.T) {
@@ -29,9 +29,9 @@ func TestRadiusProxyClient(t *testing.T) {
 
 	//------------------------
 	//---- Create Session ----
-	reqPacket := radius.New(radius.CodeAccessRequest, []byte(`12345`))
+	reqPacket := radius.New(radius.CodeAccessRequest, []byte(`123456`))
 	rfc2865.UserName_SetString(reqPacket, "tim")
-	rfc2865.UserPassword_SetString(reqPacket, "12345")
+	rfc2865.UserPassword_SetString(reqPacket, "123456")
 
 	_reqPacket, err := reqPacket.Encode()
 	if err != nil {

@@ -71,6 +71,15 @@ message DisconnectResponse {
     bytes radiusPacket = 1;
 }
 
+message ProxyRadiusRequest {
+    string ueMac = 1;
+    string calledStationID = 2;
+}
+
+message ProxyRadiusResponse {
+    bytes radiusPacket = 1;
+}
+
 message GenTrafficRequest {
     string imsi = 1;
     google.protobuf.StringValue volume = 2;
@@ -120,5 +129,5 @@ service UESim {
     // Triggers iperf traffic towards the CWAG
     rpc GenTraffic(GenTrafficRequest) returns (GenTrafficResponse) {}
 
-    rpc ProxyRadius (AuthenticateRequest) returns (AuthenticateResponse) {}
+    rpc ProxyRadius (ProxyRadiusRequest) returns (ProxyRadiusResponse) {}
 }

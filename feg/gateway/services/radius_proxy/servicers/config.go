@@ -18,8 +18,8 @@ import (
 	"os"
 
 	mcfgprotos "magma/feg/cloud/go/protos/mconfig"
-	"magma/gateway/mconfig"
 	utils "magma/feg/gateway/diameter"
+	"magma/gateway/mconfig"
 
 	"github.com/golang/glog"
 )
@@ -29,7 +29,7 @@ const (
 	RadiusProxyServiceName = "radius_proxy"
 	ClientAddrEnv          = "RADIUS_CLIENT_ADDRESS"
 	ServerAddrEnv          = "RADIUS_SERVER_ADDRESS"
-	ServerSecret           = "RADIUS_SERVER_SECRET"
+	ServerSecretEnv        = "RADIUS_SERVER_SECRET"
 )
 
 // GetRadiusProxyConfig Gets the Radius Proxy Config
@@ -41,13 +41,13 @@ func GetRadiusProxyConfig() *RadiusProxyConfig {
 		glog.V(2).Infof("%s Managed Configs Load Error: %v Using EnvVars", RadiusProxyServiceName, err)
 		conf.ClientAddr = os.Getenv(ClientAddrEnv)
 		conf.ServerAddr = os.Getenv(ServerAddrEnv)
-		conf.ServerSecret = os.Getenv(ServerSecret)
+		conf.ServerSecret = os.Getenv(ServerSecretEnv)
 
 	} else {
 		log.Printf("Configuration")
 		conf.ClientAddr = utils.GetValueOrEnv("", ClientAddrEnv, configPtr.LocalAddress)
 		conf.ServerAddr = utils.GetValueOrEnv("", ServerAddrEnv, configPtr.AaaAddress)
-		conf.ServerSecret = os.Getenv(ServerSecret)
+		conf.ServerSecret = utils.GetValueOrEnv("", ServerSecretEnv, configPtr.ServerSecret)
 	}
 	glog.V(2).Infof("Loaded configs: %+v", conf)
 	return conf

@@ -439,23 +439,26 @@ func PrettyPrintIperfResponse(input []byte) string {
 	return prettyOutput.String()
 }
 
-// Authenticate triggers an authentication for the UE with the specified IMSI.
-// Input: The IMSI of the UE to try to authenticate.
-// Output: The resulting Radius packet returned by the Radius server.
-func (srv *UESimServer) ProxyRadius(ctx context.Context, id *cwfprotos.AuthenticateRequest) (*cwfprotos.AuthenticateResponse, error) {
+// ProxyRadius Output: The resulting Radius packet returned by the Radius server.
+func (srv *UESimServer) ProxyRadius(ctx context.Context, id *cwfprotos.ProxyRadiusRequest) (*cwfprotos.ProxyRadiusResponse, error) {
 
-	packet := srv.makeRadiusProxyRequest()
+	glog.Infof("In UESIM Proxy Radius")
+
+	packet, err := srv.makeRadiusProxyRequest(id.GetUeMac(), id.GetCalledStationID())
+	if err != nil {
+		return &cwfprotos.ProxyRadiusResponse{}, err
+	}
 
 	result, err := radius.Exchange(context.Background(), packet, srv.cfg.radiusAuthAddress)
 	if err != nil {
-		return &cwfprotos.AuthenticateResponse{}, err
+		return &cwfprotos.ProxyRadiusResponse{}, err
 	}
 
 	resultBytes, err := result.Encode()
 
-	radiusPacket := &cwfprotos.AuthenticateResponse{RadiusPacket: resultBytes}
+	radiusPacket := &cwfprotos.ProxyRadiusResponse{RadiusPacket: resultBytes}
 	if err != nil {
-		return &cwfprotos.AuthenticateResponse{}, errors.Wrap(err, "Error encoding Radius packet")
+		return &cwfprotos.ProxyRadiusResponse{}, errors.Wrap(err, "Error encoding Radius packet")
 	}
 	return radiusPacket, nil
 }

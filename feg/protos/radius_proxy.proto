@@ -17,14 +17,15 @@ syntax = "proto3";
 package magma.feg;
 option go_package = "magma/feg/cloud/go/protos";
 
+
+message aaa_request {
+    bytes packet = 1;
+
+}
+message aaa_response {
+    bytes packet = 1;
+}
+
 service RadiusProxy {
-    rpc ProxyPacket(AaaRequest) returns (AaaResponse) {}
-}
-
-message AaaRequest {
-    bytes packet = 1;
-
-}
-message AaaResponse {
-    bytes packet = 1;
+    rpc ProxyPacket(aaa_request) returns (aaa_response) {}
 }

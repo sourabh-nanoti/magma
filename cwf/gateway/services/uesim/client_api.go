@@ -94,10 +94,11 @@ func GenTraffic(req *cwfprotos.GenTrafficRequest) (*cwfprotos.GenTrafficResponse
 }
 
 // ProxyRadius Triggers a dummy request to Radius Server via Radius proxy.
-func ProxyRadius(id *cwfprotos.AuthenticateRequest) (*cwfprotos.AuthenticateResponse, error) {
+func ProxyRadius(id *cwfprotos.ProxyRadiusRequest) (*cwfprotos.ProxyRadiusResponse, error) {
 	cli, err := getUESimClient()
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("************* Calling cli ProxyRadius \n")
 	return cli.ProxyRadius(context.Background(), id)
 }

@@ -16,6 +16,7 @@ package servicers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -167,4 +168,48 @@ func (srv *eapAuth) Handle(ctx context.Context, in *protos.Eap) (*protos.Eap, er
 // SupportedMethods returns sorted list (ascending, by type) of registered EAP Provider Methods
 func (srv *eapAuth) SupportedMethods(ctx context.Context, in *protos.Void) (*protos.EapMethodList, error) {
 	return &protos.EapMethodList{Methods: srv.supportedMethods}, nil
+}
+
+func (srv *eapAuth) AddSession(ctx context.Context, in *protos.DummyAddSessionReq) (*protos.DummyAddSessionRsp, error) {
+
+	imsi := in.Ctx.GetImsi()
+	if srv.config.GetAccountingEnabled() && srv.config.GetCreateSessionOnAuth() {
+		if srv.accounting == nil {
+			glog.Errorf("Cannot Create Session on Auth: accounting service is missing")
+			return nil, errors.New("No Accounting Service")
+		}
+		csResp, err := srv.accounting.CreateSession(ctx, in.Ctx)
+		if err != nil {
+			glog.Errorf("Failed to create session: %v", err)
+			return nil, errors.New("Failed to Add Session")
+		}
+		in.Ctx.AcctSessionId = csResp.GetSessionId()
+	}
+	if srv.accounting != nil {
+		_, err := srv.accounting.baseAccountingStart(in.Ctx)
+		if err != nil {
+			glog.Errorf("Accounting session start error: %v", err)
+			return nil, errors.New("Accounting Start Error")
+		}
+	}
+	// Add Session & overwrite an existing session with the same ID if present,
+	// otherwise a UE can get stuck on buggy/non-unique AP or Radius session generation
+	in.Ctx.CreatedTimeMs = uint64(time.Now().UnixNano() / NanoInMilli)
+	_, err := srv.sessions.AddSession(in.Ctx, srv.sessionTout, srv.accounting.timeoutSessionNotifier, true)
+	if err != nil {
+		glog.Errorf("Error adding a new session for SID: %s: %v", in.Ctx.GetSessionId(), err)
+		return nil, errors.New("Error Adding Session Locally ") //
+	}
+	updateRequest := &orcprotos.UpdateRecordRequest{
+		Id:       imsi,
+		Location: gatewayHardwareId,
+		Fields:   map[string]string{MacAddrKey: in.Ctx.GetMacAddr()},
+	}
+	// execute in a new goroutine in case calls to directoryd take long time
+	go directoryd.UpdateRecord(updateRequest)
+
+	resp := &protos.DummyAddSessionRsp{
+		Ctx: in.GetCtx(),
+	}
+	return resp, nil
 }

@@ -90,9 +90,11 @@ func (srv *UESimServer) EapToRadius(eapP eap.Packet, imsi string, calledStationI
 	if err != nil {
 		return nil, err
 	}
-	err = rfc2869.EAPMessage_Set(radiusP, eapP)
-	if err != nil {
-		return nil, err
+	if eapP != nil {
+		err = rfc2869.EAPMessage_Set(radiusP, eapP)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	encoded, err := radiusP.Encode()
@@ -150,9 +152,35 @@ func (srv *UESimServer) addMessageAuthenticator(encoded []byte) []byte {
 	return encoded
 }
 
-func (srv *UESimServer) makeRadiusProxyRequest() *radius.Packet {
-	packet := radius.New(radius.CodeAccessRequest, []byte(`12345`))
-	rfc2865.UserName_SetString(packet, "tim")
-	rfc2865.UserPassword_SetString(packet, "12345")
-	return packet
+func (srv *UESimServer) makeRadiusProxyRequest(imsi string, calledStationID string) (*radius.Packet, error) {
+	radiusP := radius.New(radius.CodeAccessRequest, []byte(srv.cfg.radiusSecret))
+
+	// Hardcode in the auth.
+	copy(radiusP.Authenticator[:], []byte(Auth)[:])
+
+	rfc2865.UserName_SetString(radiusP, imsi)
+	rfc2865.UserPassword_SetString(radiusP, "123456")
+
+	// TODO: Fetch UE MAC addr and use as CallingStationID
+	err := rfc2865.CallingStationID_SetString(radiusP, srv.cfg.brMac)
+	if err != nil {
+		return nil, err
+	}
+	err = rfc2865.CalledStationID_SetString(radiusP, calledStationID)
+	if err != nil {
+		return nil, err
+	}
+
+	encoded, err := radiusP.Encode()
+	if err != nil {
+		return nil, errors.Wrap(err, "Error encoding Radius packet")
+	}
+
+	// Parse to Radius packet.
+	res, err := radius.Parse(encoded, []byte(srv.cfg.radiusSecret))
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
+
+	return res, nil
 }

@@ -71,7 +71,7 @@ func New(handler radius.Handler) *MockAaa {
 		Addr: conn.LocalAddr().String(),
 		Server: &radius.PacketServer{
 			Handler:      handler,
-			SecretSource: radius.StaticSecretSource([]byte(`12345`)),
+			SecretSource: radius.StaticSecretSource([]byte(`123456`)),
 		},
 		l: conn,
 	}

@@ -69,6 +69,13 @@
    "@type": "type.googleapis.com/magma.mconfig.ControlProxy",
    "logLevel": "INFO"
   },
+  "radius_proxy": {
+   "@type": "type.googleapis.com/magma.mconfig.RadiusProxyConfig",
+   "logLevel": "INFO",
+   "logLevel": "INFO",
+	 "localAddress": ":2222",
+	 "aaaAddress": "127.0.0.1:50008"
+  },
   "directoryd": {
    "@type": "type.googleapis.com/magma.mconfig.DirectoryD",
    "logLevel": "INFO"

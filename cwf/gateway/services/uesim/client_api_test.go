@@ -41,3 +41,11 @@ func TestUESimClient(t *testing.T) {
 	err = uesim.AddUE(ue)
 	assert.NoError(t, err)
 }
+
+func TestUESimProxyRadius(t *testing.T) {
+	test_init.StartTestService(t)
+
+	req := &cwfprotos.ProxyRadiusRequest{UeMac: "11:22:33:44", CalledStationID: "helloworld"}
+	_, err := uesim.ProxyRadius(req)
+	assert.NoError(t, err)
+}

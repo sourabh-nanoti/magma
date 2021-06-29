@@ -1,4 +1,4 @@
-// +build with_builtin_radius
+// +build !with_builtin_radius
 
 /*
 Copyright 2020 The Magma Authors.

@@ -62,8 +62,8 @@ def integ_test(
     gateway_host=None, test_host=None, trf_host=None,
     gateway_vm="cwag", gateway_ansible_file="cwag_dev.yml",
     transfer_images=False, destroy_vm=False, no_build=False,
-    tests_to_run="all", skip_unit_tests=False, test_re=None,
-    test_result_xml=None, run_tests=True, count="1", provision_vm=True,
+    tests_to_run="authenticate", skip_unit_tests=True, test_re=None,
+    test_result_xml=None, run_tests=True, count="1", provision_vm=False,
 ):
     """
     Run the integration tests. This defaults to running on local vagrant
@@ -94,6 +94,7 @@ def integ_test(
         )
         return
     provision_vm = False if provision_vm == "False" else True
+    provision_vm = False
 
     # Setup the gateway: use the provided gateway if given, else default to the
     # vagrant machine

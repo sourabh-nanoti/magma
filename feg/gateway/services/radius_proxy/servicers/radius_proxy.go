@@ -15,7 +15,6 @@ package servicers
 
 import (
 	"context"
-	"log"
 	"magma/feg/cloud/go/protos"
 
 	"github.com/golang/glog"
@@ -37,12 +36,6 @@ type RadiusProxyConfig struct {
 
 // NewRadiusProxy creates an Radius proy
 func NewRadiusProxy(config *RadiusProxyConfig) (*RadiusProxy, error) {
-	/*gtpCli, err := gtp.NewRunningClient(
-		context.Background(), config.ClientAddr,
-		gtp.SGWControlPlaneIfType, config.GtpTimeout)
-	if err != nil {
-		return nil, fmt.Errorf("Error creating S8_Proxy: %s", err)
-	} */
 	return newRadiusProxyImp(config)
 }
 
@@ -58,7 +51,8 @@ func newRadiusProxyImp(config *RadiusProxyConfig) (*RadiusProxy, error) {
 // ProxyPacket : Proxies the packet to the AAA server
 func (s *RadiusProxy) ProxyPacket(ctx context.Context, req *protos.AaaRequest) (*protos.AaaResponse, error) {
 	packet := req.GetPacket()
-	log.Printf("InProxyPacket")
+	glog.V(2).Infof("Handling Radius in ProxyPacket ")
+
 	_packet, err := radius.Parse(packet, []byte(s.config.ServerSecret))
 	if err != nil {
 		glog.Errorf("Failed to parse Radius packet %s", err)
