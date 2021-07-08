@@ -17,6 +17,7 @@ package integration
 
 import (
 	"fmt"
+	cwfprotos "magma/cwf/cloud/go/protos"
 	"magma/feg/cloud/go/protos"
 	lteProtos "magma/lte/cloud/go/protos"
 	"magma/lte/cloud/go/services/policydb/obsidian/models"
@@ -25,6 +26,7 @@ import (
 	"time"
 
 	"github.com/fiorix/go-diameter/v4/diam"
+	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -77,7 +79,35 @@ func TestRadiusProxy(t *testing.T) {
 
 	tr.ProxyRadiusAndAssertSuccess(imsi)
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
+
+	// First wait until we see the original static-pass-all-ocs2 show up
+	assert.Eventually(t,
+		tr.WaitForEnforcementStatsForRule(imsi, "usage-enforcement-static-pass-all"), time.Minute, 2*time.Second)
+	fmt.Println("CCR-I exchanged installed usage-enforcement-static-pass-all")
+
+	req := &cwfprotos.GenTrafficRequest{Imsi: imsi, Volume: &wrappers.StringValue{Value: "900K"}}
+	_, err = tr.GenULTraffic(req)
+	assert.NoError(t, err)
+	tr.WaitForEnforcementStatsToSync()
+	req = &cwfprotos.GenTrafficRequest{Imsi: imsi, Volume: &wrappers.StringValue{Value: "200K"}}
+	_, err = tr.GenULTraffic(req)
+	assert.NoError(t, err)
+	tr.WaitForEnforcementStatsToSync()
+
+	// Assert that enforcement_stats rules are properly installed and the right
+	// amount of data was passed through
+	tr.AssertPolicyUsage(imsi, "usage-enforcement-static-pass-all", 1, uint64(math.Round(1.2*MegaBytes+Buffer)))
+
+	// Assert that a CCR-I and at least one CCR-U were sent up to the PCRF
+	tr.AssertAllGxExpectationsMetNoError()
+
+	// When we initiate a UE disconnect, we expect a terminate request to go up
+	terminateRequest := protos.NewGxCCRequest(imsi, protos.CCRequestType_TERMINATION)
+	terminateAnswer := protos.NewGxCCAnswer(diam.Success)
+	terminateExpectation := protos.NewGxCreditControlExpectation().Expect(terminateRequest).Return(terminateAnswer)
+	expectations = []*protos.GxCreditControlExpectation{terminateExpectation}
+	assert.NoError(t, setPCRFExpectations(expectations, nil))
 
 	tr.DisconnectAndAssertSuccess(imsi)
 
