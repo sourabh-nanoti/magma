@@ -58,6 +58,7 @@ func main() {
 	protos.RegisterS6AProxyServer(srv.GrpcServer, nhServicer)
 	protos.RegisterSwxProxyServer(srv.GrpcServer, nhServicer)
 	protos.RegisterHelloServer(srv.GrpcServer, nhServicer)
+	protos.RegisterRadiusProxyServer(srv.GrpcServer, nhServicer)
 	lteprotos.RegisterCentralSessionControllerServer(srv.GrpcServer, nhServicer)
 
 	// Register S8 Proxy Neutral Host Routing services

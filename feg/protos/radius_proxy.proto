@@ -19,7 +19,8 @@ option go_package = "magma/feg/cloud/go/protos";
 
 
 message aaa_request {
-    bytes packet = 1;
+    string subscriber_id = 1;
+    bytes packet = 2;
 
 }
 message aaa_response {

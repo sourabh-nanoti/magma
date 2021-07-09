@@ -226,6 +226,7 @@ func (s *AuthServer) ProxyPacket(w radius.ResponseWriter, r *radius.Request, ses
 	}
 
 	pReq := &radius_protos.AaaRequest{
+		SubscriberId: sessionCtx.MacAddr,
 		Packet: _reqPacket,
 	}
 
