@@ -140,3 +140,8 @@ s8_proxy:
   service:
     labels: {}
     annotations: {}
+
+radius_proxy:
+  service:
+    labels: {}
+    annotations: {}
