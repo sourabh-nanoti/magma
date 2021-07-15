@@ -212,7 +212,7 @@ func GetGyGlobalConfig() *GyGlobalConfig {
 		return &GyGlobalConfig{
 			OCSOverwriteApn:      diameter.GetValueOrEnv(OCSApnOverwriteFlag, OCSApnOverwriteEnv, ""),
 			OCSServiceIdentifier: siStr,
-			DisableGy:            false,
+			DisableGy:            configsPtr.GetGy().GetDisableGy(),
 		}
 	}
 

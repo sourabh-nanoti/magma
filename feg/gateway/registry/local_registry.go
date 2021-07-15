@@ -99,7 +99,7 @@ func init() {
 	addLocalService(HLR_PROXY, 9116)
 	addLocalService(PIPELINED, 9117)
 	addLocalService(ENVOY_CONTROLLER, 9118)
-	addLocalService(RADIUS_PROXY, 9119)
+	addLocalService(RADIUS_PROXY, 9019)
 
 	addLocalService(MOCK_OCS, 9201)
 	addLocalService(MOCK_PCRF, 9202)

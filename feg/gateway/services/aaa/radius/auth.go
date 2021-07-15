@@ -17,6 +17,8 @@ package radius
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/golang/glog"
 	"layeh.com/radius"
@@ -217,6 +219,11 @@ func (s *AuthServer) ProxyPacket(w radius.ResponseWriter, r *radius.Request, ses
 	// This is not an EAP packet. Just proxy the packet to RadiusProxy running on Feg
 	glog.Infof("In aaa_server Proxy Packet")
 
+	sessionCtx.Msisdn = sessionCtx.MacAddr
+	cleanedMac := strings.Replace(sessionCtx.MacAddr, ":", "", -1)
+	cleanedMac64, _ := strconv.ParseUint(cleanedMac, 16, 64)
+	sessionCtx.Imsi = strconv.FormatUint(cleanedMac64, 10)
+
 	p := r.Packet
 
 	_reqPacket, err := p.Encode()
@@ -227,7 +234,7 @@ func (s *AuthServer) ProxyPacket(w radius.ResponseWriter, r *radius.Request, ses
 
 	pReq := &radius_protos.AaaRequest{
 		SubscriberId: sessionCtx.MacAddr,
-		Packet: _reqPacket,
+		Packet:       _reqPacket,
 	}
 
 	pRsp, err := radius_proxy.ProxyPacket(pReq)

@@ -47,7 +47,7 @@ services:
       pcrf:
         port: 9079
       radius_proxy:
-        port: 9119
+        port: 9103
 
   health:
     host: "localhost"

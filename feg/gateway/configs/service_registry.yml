@@ -59,7 +59,7 @@ services:
     port: 50079
   radius_proxy:
     ip_address: 127.0.0.1
-    port: 9119
+    port: 9019
 
   # Development/Test Services
   mock_ocs:
